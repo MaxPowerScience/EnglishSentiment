@@ -27,15 +27,6 @@ def read_emoticons():
 
     return  emoticons, emoticons_tags, sentiments
 
-
-def tag_emoticons(text, emoticons_dict):
-    split = text.split()
-    for word in split:
-        if word in emoticons_dict:
-            text = text.replace(word, emoticons_dict.get(word))
-
-    return text
-
 def preprocess_texts(texts):
     cleaned_texts = []
     emoticons, emoticons_tags, _ = read_emoticons()
@@ -44,25 +35,47 @@ def preprocess_texts(texts):
     i = 1
     for text in texts:
         print(i)
-        cleaned_texts.append(get_feature_string(process_text(tag_emoticons(text, emoticons_dict)), stop_words))
+        cleaned_texts.append(process_text(text, emoticons_dict, stop_words))
         i = i + 1
 
     return cleaned_texts
 
-def process_text(text):
-    #Convert to lower case
+def process_text(text, emoticons_dict, stop_words):
+    processed_text = ''
+    # Convert list to set for faster lookup
+    stop_words = set(stop_words)
+
+    # Convert to lower case
     text = text.lower()
-    #Convert www.* or https?://* to URL
-    text = re.sub('((www\.[^\s]+)|(https?://[^\s]+))','URL',text)
-    #Convert @username to AT_USER
-    text = re.sub('@[^\s]+','AT_USER',text)
-    #Remove additional white spaces
+    # Convert www.* or https?://* to URL
+    text = re.sub('((www\.[^\s]+)|(https?://[^\s]+))', 'URL', text)
+    # Convert @username to AT_USER
+    text = re.sub('@[^\s]+', 'AT_USER', text)
+    # Remove additional white spaces
     text = re.sub('[\s]+', ' ', text)
-    #Replace #word with word
+    # Replace #word with word
     text = re.sub(r'#([^\s]+)', r'\1', text)
-    #trim
+    # Trim
     text = text.strip('\'"')
-    return text
+
+    split_text = text.split()
+    for word in split_text:
+        if word in emoticons_dict:
+            word = word.replace(word, emoticons_dict.get(word))
+        else:
+            # Replace two or more with two occurrences
+            word = replace_duplicate_characters(word)
+            # Strip punctuation
+            word = word.strip('\'"?!,.')
+            # Check if the word stats with an alphabet
+            val = re.search(r"^[a-zA-Z][a-zA-Z0-9]*$", word)
+            if (word in stop_words or val is None):
+                # if (val is None):
+                continue
+        # word = stemmer.stem(word)
+        processed_text += word + ' '
+
+    return processed_text
 
 def get_stop_word_list(stop_word_list_file_name):
     #read the stopwords file and build a list
@@ -81,27 +94,9 @@ def replace_duplicate_characters(s):
     pattern = re.compile(r"(.)\1{1,}", re.DOTALL)
     return pattern.sub(r"\1\1", s)
 
-def get_feature_string(text, stop_words):
-    feature_string = ""
-    #split text into words
-    words = text.split()
-    for w in words:
-        #replace two or more with two occurrences
-        w = replace_duplicate_characters(w)
-        #strip punctuation
-        w = w.strip('\'"?!,.')
-        #check if the word stats with an alphabet
-        val = re.search(r"^[a-zA-Z][a-zA-Z0-9]*$", w)
-        #ignore if it is a stop word
-        if(w in stop_words or val is None):
-            continue
-        else:
-            feature_string += w.lower() + " "
-
-    return feature_string.strip()
-
 def create_ids(cleaned_texts, ids_name, max_seq_length, dictionary):
-    unknown_word = len(dictionary)
+    unknown_word = 399999
+    dictionaryset = set(dictionary)
 
     ids = np.zeros((len(cleaned_texts), max_seq_length), dtype='int32')
     file_counter = 0
@@ -109,10 +104,10 @@ def create_ids(cleaned_texts, ids_name, max_seq_length, dictionary):
         index_counter = 0
         split = text.split()
         for word in split:
-            try:
+            if (word in dictionaryset):
                 ids[file_counter][index_counter] = dictionary.index(word)
-            except ValueError:
-                ids[file_counter][index_counter] = unknown_word  # Vector for unkown words
+            else:
+                ids[file_counter][index_counter] = unknown_word
             index_counter = index_counter + 1
             if index_counter >= max_seq_length:
                 break
@@ -128,7 +123,9 @@ def read_word_list():
     word_list = word_list.tolist()  # Originally loaded as numpy array
     word_list = [word.decode('UTF-8') for word in word_list]
 
-    return word_list
+    word_vectors = np.load('../resources/wordVectors.npy')
+
+    return word_list, word_vectors
 
 # Load or create ids matrix
 def get_ids_matrix(texts, dictionary):
@@ -152,19 +149,20 @@ def get_max_sequence_length(cleaned_texts):
         length_of_texts.append(text_split_length)
 
     max_sequence_length = int(round(np.percentile(length_of_texts, 80)))
+    max_sequence_length = 250
     print(max_sequence_length)
     return max_sequence_length
 
 def separate_test_and_training_data(pos_texts, neg_texts, ids):
 
     # Split data in train and test
-    percentage_train_data = 0.8
+    percentage_train_data = 1
 
-    number_of_positive_train = round(len(pos_texts) * percentage_train_data)
-    number_of_negative_train = round(len(neg_texts) * percentage_train_data)
+    number_of_positive_train = round(len(pos_texts) * percentage_train_data) - 1
+    number_of_negative_train = round(len(neg_texts) * percentage_train_data) - 1
 
-    number_of_positive_test = len(pos_texts) - number_of_positive_train
-    number_of_negative_test = len(neg_texts) - number_of_negative_train
+    number_of_positive_test = len(pos_texts) - number_of_positive_train - 1
+    number_of_negative_test = len(neg_texts) - number_of_negative_train - 1
 
     lower_bound_pos_train = 0
     upper_bound_pos_train = lower_bound_pos_train + number_of_positive_train

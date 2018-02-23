@@ -17,7 +17,7 @@ def create_perceptron(max_sequence_length, dict_size):
     return tflearn.DNN(net, tensorboard_verbose=0, tensorboard_dir='../tensorboard/tensorboard_fully')
 
 def train_network(trainX, trainY, model):
-    batch_size = 32
+    batch_size = 24
 
     save_folder = '../models/perceptron/'
     save_name = 'perceptron_' + datetime.datetime.now().strftime("%Y%m%d-%H%M%S") + '.tfl'
@@ -27,10 +27,10 @@ def train_network(trainX, trainY, model):
 
     save_path = save_folder + save_name
 
-    n_epoch = 100
-    for i in range(0,n_epoch):
-        trainX, trainY = tflearn.data_utils.shuffle(trainX, trainY)
-        model.fit(trainX, trainY, validation_set=0.1, show_metric=True, batch_size=batch_size, n_epoch=1)
+    #n_epoch = 100
+    #for i in range(0,n_epoch):
+    trainX, trainY = tflearn.data_utils.shuffle(trainX, trainY)
+    model.fit(trainX, trainY, validation_set=0.1, show_metric=True, batch_size=batch_size, n_epoch=50)
 
     model.save(save_path)
     return model
