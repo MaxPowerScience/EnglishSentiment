@@ -191,7 +191,40 @@ def separate_test_and_training_data(pos_texts, neg_texts, ids):
     testX = np.concatenate([positive_test, negative_test])
     testY = to_categorical(np.concatenate([pos_labels_test, neg_labels_test]), nb_classes=2)
 
+    analyze_train_ids(trainX)
+
     return trainX, trainY, testX, testY
+
+def analyze_train_ids(trainX):
+
+    unknown_word = 0
+
+    for entry in trainX:
+        for value in entry:
+            if value > unknown_word:
+                unknown_word = value
+
+    print('Unknown word has index:', unknown_word)
+
+    counter_zeros = 0
+    counter_unknown = 0
+
+    for entry2 in trainX:
+        for value2 in entry2:
+            if value2 == 0:
+                counter_zeros += 1
+            if value2 == unknown_word:
+                counter_unknown += 1
+
+    number_train_data = len(trainX)
+    size_of_entry_train_data = len(trainX[0])
+
+    all_values = number_train_data * size_of_entry_train_data
+
+    print('Number of zeros values', counter_zeros)
+    print('Number of unknown words', counter_unknown)
+    print('Percentage zeros:', counter_zeros / all_values)
+    print('Percentage unknown:', counter_unknown / all_values)
 
 def main():
     all_texts, pos_texts, neu_texts, neg_texts, sentiments = get_raw_data()
