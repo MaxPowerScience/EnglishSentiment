@@ -158,21 +158,21 @@ def separate_test_and_training_data(pos_texts, neg_texts, ids):
     # Split data in train and test
     percentage_train_data = 1
 
-    number_of_positive_train = round(len(pos_texts) * percentage_train_data) - 1
-    number_of_negative_train = round(len(neg_texts) * percentage_train_data) - 1
+    number_of_positive_train = round(len(pos_texts) * percentage_train_data)
+    number_of_negative_train = round(len(neg_texts) * percentage_train_data)
 
-    number_of_positive_test = len(pos_texts) - number_of_positive_train - 1
-    number_of_negative_test = len(neg_texts) - number_of_negative_train - 1
+    number_of_positive_test = len(pos_texts) - number_of_positive_train
+    number_of_negative_test = len(neg_texts) - number_of_negative_train
 
     lower_bound_pos_train = 0
     upper_bound_pos_train = lower_bound_pos_train + number_of_positive_train
-    lower_bound_pos_test = upper_bound_pos_train + 1
+    lower_bound_pos_test = upper_bound_pos_train
     upper_bound_pos_test = lower_bound_pos_test + number_of_positive_test
 
-    lower_bound_neg_train = 0
+    lower_bound_neg_train = number_of_positive_train
     #upper_bound_neg_train = lower_bound_neg_train + number_of_negative_train
     upper_bound_neg_train = lower_bound_neg_train + number_of_positive_train
-    lower_bound_neg_test = upper_bound_neg_train + 1
+    lower_bound_neg_test = upper_bound_neg_train
     upper_bound_neg_test = lower_bound_neg_test + number_of_negative_test
 
     positive_train = ids[lower_bound_pos_train:upper_bound_pos_train]

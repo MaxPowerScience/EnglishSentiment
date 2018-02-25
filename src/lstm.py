@@ -34,7 +34,7 @@ def create_lstm(max_sequence_length, dict_size, word_vectors):
 
     return model
 
-def create_lstm_with_tensorflow(word_vectors):
+def create_lstm_with_tensorflow(word_vectors, trainY):
 
         with tf.Session() as sess:
             print('bla')
@@ -101,7 +101,7 @@ def create_lstm_with_tensorflow(word_vectors):
 
         for i in range(iterations):
             # Next Batch of reviews
-            nextBatch, nextBatchLabels = getTrainBatch(batchSize, maxSeqLength, ids);
+            nextBatch, nextBatchLabels = getTrainBatch(batchSize, maxSeqLength, ids, trainY);
 
             # print(nextBatch.tolist())
             # print(nextBatch.shape)
@@ -116,17 +116,19 @@ def create_lstm_with_tensorflow(word_vectors):
                 writer.add_summary(summary, i)
         writer.close()
 
-def getTrainBatch(batchSize, maxSeqLength, ids):
+def getTrainBatch(batchSize, maxSeqLength, ids, trainY):
     labels = []
     arr = np.zeros([batchSize, maxSeqLength])
     for i in range(batchSize):
         if (i % 2 == 0):
-            num = randint(1,11499)
+            num = randint(0,11499)
+            #num = randint(1, 6999)
             labels.append([1,0])
         else:
-            num = randint(13499,24999)
+            num = randint(13500,24999)
+            #num = randint(14000, 20999)
             labels.append([0,1])
-        arr[i] = ids[num-1:num]
+        arr[i] = ids[num]
     return arr, labels
 
 def get_a_cell(lstm_size, keep_prob):
